@@ -1,0 +1,27 @@
+{
+	"schemaVersion": 1,
+	"id": "whatsmysurroundings",
+	"version": "1.0.0",
+	"name": "Whats My Surroundings",
+	"description": "在屏幕上显示周围方块的实时信息",
+	"authors": [
+		"_26T"
+	],
+	"contact": {},
+	"license": "MIT",
+	"icon": "assets/whats-my-surroundings/icon.png",
+	"environment": "client",
+	"entrypoints": {
+		"main": [
+			"whatsmysurroundings.WhatsMySurroundings"
+		],
+		"client": [
+			"whatsmysurroundings.client.WhatsMySurroundingsClient"
+		]
+	},
+	"depends": {
+		"fabricloader": ">=0.16.0",
+		"minecraft": ">=26.1.2",
+		"java": ">=25"
+	}
+}

@@ -1,0 +1,12 @@
+{
+	"required": true,
+	"minVersion": "0.8",
+	"package": "whatsmysurroundings.mixin",
+	"compatibilityLevel": "JAVA_21",
+	"client": [
+		"client.InGameHudMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}
