@@ -55,7 +55,7 @@ public class KeyBindings {
                 client.setScreen(new MainScreen());
 
                 client.player.sendSystemMessage(Component.literal("Text"));
-                System.out.println("[WMS] 玩家按下了测试键");
+                System.out.println("[WMS] 玩家按下测试键");
 
             }
         });
