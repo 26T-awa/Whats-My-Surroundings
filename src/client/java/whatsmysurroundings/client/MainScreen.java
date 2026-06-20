@@ -24,7 +24,7 @@ public class MainScreen extends Screen {
                     Minecraft client = Minecraft.getInstance();
                     if (client.player != null) {
                         // 方式一：发送普通聊天消息（会显示在聊天框，其他玩家可见）
-                        client.player.connection.sendChat("Hello from my mod!");
+                        client.player.connection.sendChat("[WMS] 这是一条消息测试。");
 
                         // 方式二：发送系统消息（仅自己可见，通常用于提示）
                         // client.player.sendSystemMessage(Component.literal("消息已发送！"));

@@ -34,7 +34,6 @@ public class KeyBindings {
     public static void setNewKey(int key_value) {
         InputConstants.Key newKey = InputConstants.Type.KEYSYM.getOrCreate(key_value);
         openGuiKey.setKey(newKey);
-        register();
 
         System.out.println("[WMS] 已绑定新按键");
     }
@@ -43,7 +42,6 @@ public class KeyBindings {
     public static void resetKey() {
         InputConstants.Key newKey = InputConstants.Type.KEYSYM.getOrCreate(KEY_R);
         openGuiKey.setKey(newKey);
-        register();
 
         System.out.println("[WMS] 已重置按键");
     }
@@ -54,7 +52,7 @@ public class KeyBindings {
             if (openGuiKey != null && openGuiKey.consumeClick() && client.player != null) {
                 client.setScreen(new MainScreen());
 
-                client.player.sendSystemMessage(Component.literal("Text"));
+                client.player.sendSystemMessage(Component.literal("消息测试。"));
                 System.out.println("[WMS] 玩家按下测试键");
 
             }
