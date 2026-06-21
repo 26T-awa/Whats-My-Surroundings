@@ -29,7 +29,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 
-public class FindCommand {
+public class wmsblockCommand {
     private static int radius = 1;// 方形半径
     private static List<Block> TargetBlocks = new ArrayList<>();
 
@@ -54,6 +54,8 @@ public class FindCommand {
     };
 
     public static void register() {
+        CustomedCommands.addCommandString("wmsblock");
+
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
             dispatcher.register(
                     ClientCommands.literal("wmsblock")
@@ -119,7 +121,7 @@ public class FindCommand {
         });
     }
 
-    // 开始查询
+    // 查询仅目标方块
     private static int findTargetBlocksOnly(CommandContext<FabricClientCommandSource> context) {
         if (TargetBlocks.isEmpty()) {
             context.getSource().sendFeedback(
@@ -165,32 +167,31 @@ public class FindCommand {
             String blockName = block.getName().getString();
             String registryName = BuiltInRegistries.BLOCK.wrapAsHolder(block).getRegisteredName();
 
-            // 输出方块名称
-            context.getSource().sendFeedback(
-                    Component.literal(String.format("  \u00a7f- %s \u00a77(%s):", blockName, registryName)));
-
-            // 输出坐标列表（每行最多3个坐标）
-            StringBuilder line = new StringBuilder("      ");
+            // 输出坐标列表（每行2个坐标）
+            StringBuilder text = new StringBuilder(
+                    String.format("  \u00a7f- %s \u00a77(%s):\n    ", blockName, registryName));
             for (int i = 0; i < positions.size(); i++) {
                 BlockPos pos = positions.get(i);
-                line.append(String.format("[%d, %d, %d]", pos.getX(), pos.getY(), pos.getZ()));
-                if (i < positions.size() - 1) {
-                    line.append(", ");
-                }
-                // 每3个坐标换行
-                if ((i + 1) % 3 == 0 && i < positions.size() - 1) {
-                    context.getSource().sendFeedback(Component.literal(line.toString()));
-                    line = new StringBuilder("      ");
-                }
+                text.append(String.format("\u00a77[\u00a7c%d\u00a77, \u00a7a%d\u00a77, \u00a7b%d\u00a77]",
+                        pos.getX(), pos.getY(), pos.getZ()));
+                if (i < positions.size() - 1)
+                    text.append("\u00a77,    ");
+                else
+                    text.append("\u00a77.");
+
+                // 每2个坐标换行
+                if ((i + 1) % 2 == 0 && i < positions.size() - 1)
+                    text.append("\n    ");
+
             }
-            if (line.length() > 6) {
-                context.getSource().sendFeedback(Component.literal(line.toString()));
-            }
+
+            context.getSource().sendFeedback(Component.literal(text.toString()));
         }
 
         return 1;
     }
 
+    // 查询所有非空气方块
     private static int findAllBlocks(CommandContext<FabricClientCommandSource> context) {
         LocalPlayer player = context.getSource().getPlayer();
 
@@ -230,6 +231,7 @@ public class FindCommand {
         int maxDisplay = 16; // 最多显示方块数量
         int displayed = 0;
         boolean hasMore = false;
+        StringBuilder text = new StringBuilder("\n");
 
         for (int dx = -radius; dx <= radius; dx++) {
             for (int dy = -radius; dy <= radius; dy++) {
@@ -244,16 +246,18 @@ public class FindCommand {
                         Block block = state.getBlock();
                         String blockName = block.getName().getString();
                         boolean isTarget = TargetBlocks.contains(block);
-                        String prefix = isTarget ? "\u00a7a* " : "\u00a77  ";
-                        String suffix = isTarget ? "\u00a7a" : "\u00a77";
+                        String prefix = isTarget ? "\n\u00a7f  [" : "\n\u00a77  [";
+                        String suffix = isTarget ? "\u00a7f] " : "\u00a77] ";
 
-                        context.getSource().sendFeedback(
-                                Component.literal(String.format(
-                                        "%s[%d, %d, %d] %s%s",
-                                        prefix,
-                                        pos.getX(), pos.getY(), pos.getZ(),
-                                        suffix,
-                                        blockName)));
+                        text.append(prefix);
+                        text.append(pos.getX());
+                        text.append(", ");
+                        text.append(pos.getY());
+                        text.append(", ");
+                        text.append(pos.getZ());
+                        text.append(suffix);
+                        text.append(blockName);
+
                         displayed++;
                     }
                 }
@@ -263,6 +267,8 @@ public class FindCommand {
             if (hasMore)
                 break;
         }
+        context.getSource().sendFeedback(
+                Component.literal(text.toString()));
 
         if (hasMore) {
             context.getSource().sendFeedback(
@@ -348,6 +354,18 @@ public class FindCommand {
         }
 
         radius = new_radius;
+        if (radius > 15) {
+            context.getSource()
+                    .sendFeedback(Component.literal(String.format(
+                            "\u00a7e[WMS 警告] 方形半径参数 radius 大于16，可能查询造成卡顿！(现:%d)", radius)));
+        }
+        if (radius > 999) {
+            radius = 999;
+            context.getSource()
+                    .sendFeedback(Component.literal(String.format(
+                            "\u00a7e[WMS 警告] 方形半径参数 radius 已限制到999，过大可能查询造成卡顿！(现:%d)", radius)));
+        }
+
         context.getSource()
                 .sendFeedback(Component.literal(String.format(
                         "\u00a7a[WMS] 方形半径参数 radius 现变为 %d)", radius)));

@@ -19,7 +19,7 @@ public class WorldJoinHandler {
                 hasJoined = true;
                 // 在聊天框发送消息
                 client.player.sendSystemMessage(Component.literal(
-                        "\u00a7a你已成功加载 Whats My Surroudings 模组！\n键入 '\u00a7b\u00a7n/wms help\u00a7r\u00a7a' 获得帮助。\u00a7r"));
+                        "\u00a7a你已成功加载 Whats My Surroudings 模组！\n键入 '\u00a7b\u00a7n/wmshelp\u00a7r\u00a7a' 获得帮助。\u00a7r"));
                 // 控制台也输出一条，方便调试
                 System.out.println("[WMS] 加载成功。");
             }
