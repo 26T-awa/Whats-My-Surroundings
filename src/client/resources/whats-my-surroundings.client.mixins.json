@@ -3,7 +3,8 @@
 	"package": "whats.my.surroundings.client.mixin",
 	"compatibilityLevel": "JAVA_25",
 	"client": [
-		"ExampleClientMixin"
+		"ExampleClientMixin",
+		"GameRendererMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

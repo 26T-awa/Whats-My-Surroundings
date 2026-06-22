@@ -1,9 +1,9 @@
-package whatsmysurroundings.client.Commands;
+package whatsmysurroundings.client.WMSCommands;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class CustomedCommands {
+public class WMSCommands {
    private static List<String> WMSCommands = new ArrayList<>();
 
    public static void addCommandString(String commandString){

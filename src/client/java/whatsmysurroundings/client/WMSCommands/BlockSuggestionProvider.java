@@ -1,4 +1,4 @@
-package whatsmysurroundings.client.Commands;
+package whatsmysurroundings.client.WMSCommands;
 
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.suggestion.SuggestionProvider;

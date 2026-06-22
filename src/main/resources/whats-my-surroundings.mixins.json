@@ -4,7 +4,8 @@
 	"package": "whatsmysurroundings.mixin",
 	"compatibilityLevel": "JAVA_21",
 	"client": [
-		"client.InGameHudMixin"
+		"client.InGameHudMixin",
+		"client.WorldRendererMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

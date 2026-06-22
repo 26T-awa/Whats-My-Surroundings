@@ -1,8 +1,9 @@
-package whatsmysurroundings.client.Commands;
+package whatsmysurroundings.client.WMSCommands;
 
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
+//import whatsmysurroundings.client.mixin.WorldRendererMixin;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
@@ -54,7 +55,7 @@ public class wmsblockCommand {
     };
 
     public static void register() {
-        CustomedCommands.addCommandString("wmsblock");
+        WMSCommands.addCommandString("wmsblock");
 
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
             dispatcher.register(
@@ -71,7 +72,9 @@ public class wmsblockCommand {
                                             .executes(context -> {
                                                 return setRadius(context,
                                                         IntegerArgumentType.getInteger(context, "radius"));
-                                            })))
+                                            }))
+
+                            )
 
                             // '/wmsblock target ...'
                             .then(ClientCommands.literal("target")
@@ -107,15 +110,39 @@ public class wmsblockCommand {
 
                             )
 
-                            // '/wmsblock find' 开始查询
+                            // '/wmsblock find' 查询仅目标方块
                             .then(ClientCommands.literal("find")
                                     .executes(context -> {
                                         return findTargetBlocksOnly(context);
                                     })
+
+                                    // '/wmsblock find *' 查询所有非空气方块
                                     .then(ClientCommands.literal("*")
                                             .executes(context -> {
                                                 return findAllBlocks(context);
-                                            })))
+                                            }))
+
+                                    // '/wmsblock find [<block_id>]' 加入并查询目标方块
+                                    .then(ClientCommands.argument("block_id", BlockStateArgument.block(registryAccess))
+                                            .suggests(new BlockSuggestionProvider())
+                                            .executes(context -> {
+                                                BlockInput blockInput = context.getArgument("block_id",
+                                                        BlockInput.class);
+                                                Block newblock = blockInput.getState().getBlock();
+
+                                                return (addTargetBlock(context, newblock) == 1
+                                                        && findTargetBlocksOnly(context) == 1) ? 1 : 0;
+                                            }))
+
+                            )
+
+                            // '/wmsblock clear' 清除显示
+                            .then(ClientCommands.literal("clear")
+                                    .executes(context -> {
+                                        return clearBlockHighlight(context);
+                                    })
+
+                            )
 
             );
         });
@@ -135,6 +162,7 @@ public class wmsblockCommand {
         BlockPos centerPos = player.blockPosition();
 
         Map<Block, List<BlockPos>> foundMap = new HashMap<>();
+         //WorldRendererMixin.getHighlightStorage().clearHighlights();
 
         for (int dx = -radius; dx <= radius; dx++) {
             for (int dy = -radius; dy <= radius; dy++) {
@@ -145,6 +173,8 @@ public class wmsblockCommand {
                         Block block = state.getBlock();
                         if (TargetBlocks.contains(block)) {
                             foundMap.computeIfAbsent(block, k -> new ArrayList<>()).add(pos);
+
+                            //WorldRendererMixin.getHighlightStorage().addHighlightedBlock(pos);
                         }
                     }
                 }
@@ -201,6 +231,8 @@ public class wmsblockCommand {
         int totalBlocks = 0;
         int targetCount = 0;
 
+         //WorldRendererMixin.getHighlightStorage().clearHighlights();
+
         // 先统计数量
         for (int dx = -radius; dx <= radius; dx++) {
             for (int dy = -radius; dy <= radius; dy++) {
@@ -211,6 +243,8 @@ public class wmsblockCommand {
                         totalBlocks++;
                         if (TargetBlocks.contains(state.getBlock())) {
                             targetCount++;
+
+                            //WorldRendererMixin.getHighlightStorage().addHighlightedBlock(pos);
                         }
                     }
                 }
@@ -370,6 +404,12 @@ public class wmsblockCommand {
                 .sendFeedback(Component.literal(String.format(
                         "\u00a7a[WMS] 方形半径参数 radius 现变为 %d)", radius)));
 
+        return 1;
+    }
+
+    // 清除方块高亮
+    private static int clearBlockHighlight(CommandContext<FabricClientCommandSource> context) {
+         //WorldRendererMixin.getHighlightStorage().clearHighlights();
         return 1;
     }
 

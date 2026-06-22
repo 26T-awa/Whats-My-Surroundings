@@ -3,7 +3,8 @@ package whatsmysurroundings.client;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import whatsmysurroundings.client.Commands.CustomedCommands;
+import whatsmysurroundings.client.WMSCommands.WMSCommands;
+import whatsmysurroundings.client.WorldRender.KeyBindings;
 
 @Environment(EnvType.CLIENT)
 public class WhatsMySurroundingsClient implements ClientModInitializer {
@@ -19,7 +20,7 @@ public class WhatsMySurroundingsClient implements ClientModInitializer {
         KeyBindings.registerTickListener();
 
         // 4. 注册自定义命令
-        CustomedCommands.init();
+        WMSCommands.init();
 
         System.out.println("[WMS] 客户端初始化完成，已注册事件监听器");
     }

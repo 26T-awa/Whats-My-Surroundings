@@ -1,4 +1,4 @@
-package whatsmysurroundings.client.Commands;
+package whatsmysurroundings.client.WMSCommands;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
@@ -27,7 +27,7 @@ public class wmshelpCommand {
     // 命令建议
     private static final SuggestionProvider<FabricClientCommandSource> COMMAND_SUGGESTIONS = (context,
             builder) -> {
-        List<String> suggestions = CustomedCommands.getWMSCommands();
+        List<String> suggestions = WMSCommands.getWMSCommands();
         for (String value : suggestions) {
             builder.suggest(value);
         }
@@ -35,7 +35,7 @@ public class wmshelpCommand {
     };
 
     public static void register() {
-        CustomedCommands.addCommandString("wmshelp");
+        WMSCommands.addCommandString("wmshelp");
 
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
             dispatcher.register(
@@ -63,7 +63,7 @@ public class wmshelpCommand {
                 .sendFeedback(Component.literal(
                         "\u00a7a[WMS] 现有的所有命令："));
 
-        for (String command : CustomedCommands.getWMSCommands()) {
+        for (String command : WMSCommands.getWMSCommands()) {
             context.getSource()
                     .sendFeedback(Component.literal(String.format(
                             "  %d. %s", count, command)));

@@ -1,4 +1,4 @@
-package whatsmysurroundings.client;
+package whatsmysurroundings.client.WorldRender;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
