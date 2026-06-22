@@ -1,7 +1,10 @@
-package whatsmysurroundings.client.WMSCommands;
+package whatsmysurroundings.client.Commands;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import whatsmysurroundings.client.Commands.wmsblockCommand;
+import whatsmysurroundings.client.Commands.wmshelpCommand;
 
 public class WMSCommands {
    private static List<String> WMSCommands = new ArrayList<>();

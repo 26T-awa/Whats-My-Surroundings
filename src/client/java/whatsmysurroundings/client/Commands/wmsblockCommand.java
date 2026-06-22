@@ -1,9 +1,11 @@
-package whatsmysurroundings.client.WMSCommands;
+package whatsmysurroundings.client.Commands;
 
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
-//import whatsmysurroundings.client.mixin.WorldRendererMixin;
+import whatsmysurroundings.client.Render.BlockRender;
+import whatsmysurroundings.client.Commands.BlockSuggestionProvider;
+import whatsmysurroundings.client.Commands.WMSCommands;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
@@ -31,13 +33,13 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 
 public class wmsblockCommand {
-    private static int radius = 1;// 方形半径
+    private static int radius = 5;// 方形半径
     private static List<Block> TargetBlocks = new ArrayList<>();
 
     // 半径建议
     private static final SuggestionProvider<FabricClientCommandSource> RADIUS_SUGGESTIONS = (context,
             builder) -> {
-        List<Integer> suggestions = Arrays.asList(1, 3, 5);
+        List<Integer> suggestions = Arrays.asList(3, 5, 16, 160);
         for (int value : suggestions) {
             builder.suggest(String.valueOf(value));
         }
@@ -130,8 +132,7 @@ public class wmsblockCommand {
                                                         BlockInput.class);
                                                 Block newblock = blockInput.getState().getBlock();
 
-                                                return (addTargetBlock(context, newblock) == 1
-                                                        && findTargetBlocksOnly(context) == 1) ? 1 : 0;
+                                                return findandAddTargetBlocksOnly(context, newblock);
                                             }))
 
                             )
@@ -148,6 +149,22 @@ public class wmsblockCommand {
         });
     }
 
+    private static int findandAddTargetBlocksOnly(CommandContext<FabricClientCommandSource> context, Block new_block) {
+        boolean has_found = false;
+        for (Block target : TargetBlocks)
+            if (BuiltInRegistries.BLOCK.wrapAsHolder(target).getRegisteredName().equals(
+                    BuiltInRegistries.BLOCK.wrapAsHolder(new_block).getRegisteredName()))
+                has_found = true;
+
+        if (!has_found)
+            TargetBlocks.add(new_block);
+
+        int totaltargetblocks = findTargetBlocksOnly(context);
+        TargetBlocks.remove(new_block);
+
+        return totaltargetblocks;
+    }
+
     // 查询仅目标方块
     private static int findTargetBlocksOnly(CommandContext<FabricClientCommandSource> context) {
         if (TargetBlocks.isEmpty()) {
@@ -162,7 +179,6 @@ public class wmsblockCommand {
         BlockPos centerPos = player.blockPosition();
 
         Map<Block, List<BlockPos>> foundMap = new HashMap<>();
-         //WorldRendererMixin.getHighlightStorage().clearHighlights();
 
         for (int dx = -radius; dx <= radius; dx++) {
             for (int dy = -radius; dy <= radius; dy++) {
@@ -174,7 +190,7 @@ public class wmsblockCommand {
                         if (TargetBlocks.contains(block)) {
                             foundMap.computeIfAbsent(block, k -> new ArrayList<>()).add(pos);
 
-                            //WorldRendererMixin.getHighlightStorage().addHighlightedBlock(pos);
+                            BlockRender.addHighlight(pos);
                         }
                     }
                 }
@@ -184,12 +200,13 @@ public class wmsblockCommand {
         if (foundMap.isEmpty()) {
             context.getSource().sendFeedback(
                     Component.literal("\u00a7e[WMS] 在半径 " + radius + " 内未找到任何目标方块"));
-            return 1;
+            return 0;
         }
 
         // 输出结果
         context.getSource().sendFeedback(
                 Component.literal(String.format("\u00a7a[WMS] 在半径 %d 内找到 %d 种目标方块:", radius, foundMap.size())));
+        int totaltargetblocks = 0;
 
         for (Map.Entry<Block, List<BlockPos>> entry : foundMap.entrySet()) {
             Block block = entry.getKey();
@@ -212,13 +229,13 @@ public class wmsblockCommand {
                 // 每2个坐标换行
                 if ((i + 1) % 2 == 0 && i < positions.size() - 1)
                     text.append("\n    ");
-
             }
+            totaltargetblocks+=positions.size();
 
             context.getSource().sendFeedback(Component.literal(text.toString()));
         }
 
-        return 1;
+        return totaltargetblocks;
     }
 
     // 查询所有非空气方块
@@ -231,8 +248,6 @@ public class wmsblockCommand {
         int totalBlocks = 0;
         int targetCount = 0;
 
-         //WorldRendererMixin.getHighlightStorage().clearHighlights();
-
         // 先统计数量
         for (int dx = -radius; dx <= radius; dx++) {
             for (int dy = -radius; dy <= radius; dy++) {
@@ -244,7 +259,7 @@ public class wmsblockCommand {
                         if (TargetBlocks.contains(state.getBlock())) {
                             targetCount++;
 
-                            //WorldRendererMixin.getHighlightStorage().addHighlightedBlock(pos);
+                            BlockRender.addHighlight(pos);
                         }
                     }
                 }
@@ -311,7 +326,7 @@ public class wmsblockCommand {
                             totalBlocks - maxDisplay)));
         }
 
-        return 1;
+        return totalBlocks;
     }
 
     // 加入新的目标方块
@@ -356,7 +371,7 @@ public class wmsblockCommand {
                                 BuiltInRegistries.BLOCK.wrapAsHolder(target).getRegisteredName())));
             counter++;
         }
-        return 1;
+        return size;
     }
 
     // 删除目标方块
@@ -388,28 +403,32 @@ public class wmsblockCommand {
         }
 
         radius = new_radius;
-        if (radius > 15) {
+        if (radius > 159) {
             context.getSource()
                     .sendFeedback(Component.literal(String.format(
-                            "\u00a7e[WMS 警告] 方形半径参数 radius 大于16，可能查询造成卡顿！(现:%d)", radius)));
+                            "\u00a7e[WMS 警告] 方形半径参数 radius 大于160，可能查询造成卡顿！(现:%d)", radius)));
         }
-        if (radius > 999) {
-            radius = 999;
+        if (radius > 320) {
+            radius = 320;
             context.getSource()
                     .sendFeedback(Component.literal(String.format(
-                            "\u00a7e[WMS 警告] 方形半径参数 radius 已限制到999，过大可能查询造成卡顿！(现:%d)", radius)));
+                            "\u00a7e[WMS 警告] 方形半径参数 radius 已限制到320，过大可能查询造成卡顿！(现:%d)", radius)));
         }
 
         context.getSource()
                 .sendFeedback(Component.literal(String.format(
-                        "\u00a7a[WMS] 方形半径参数 radius 现变为 %d)", radius)));
+                        "\u00a7a[WMS] 方形半径参数 radius 现变为 %d", radius)));
 
-        return 1;
+        return radius;
     }
 
     // 清除方块高亮
     private static int clearBlockHighlight(CommandContext<FabricClientCommandSource> context) {
-         //WorldRendererMixin.getHighlightStorage().clearHighlights();
+        context.getSource()
+                .sendFeedback(Component.literal(String.format(
+                        "\u00a7a[WMS] 已清除所有高亮")));
+
+        BlockRender.clearHighlights();
         return 1;
     }
 

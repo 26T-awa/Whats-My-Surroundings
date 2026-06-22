@@ -1,4 +1,4 @@
-package whatsmysurroundings.client.WMSCommands;
+package whatsmysurroundings.client.Commands;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
@@ -9,6 +9,7 @@ import java.util.Map;
 
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+import whatsmysurroundings.client.Commands.WMSCommands;
 
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;

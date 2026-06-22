@@ -1,8 +1,9 @@
-package whatsmysurroundings.client.WorldRender;
+package whatsmysurroundings.client.Others;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.network.chat.Component;
+import whatsmysurroundings.client.Others.MainScreen;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.minecraft.client.KeyMapping;
