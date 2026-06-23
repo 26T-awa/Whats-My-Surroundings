@@ -4,6 +4,7 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import whatsmysurroundings.client.Commands.WMSCommands;
+import whatsmysurroundings.client.Others.AutoQueryManager;
 import whatsmysurroundings.client.Others.KeyBindings;
 import whatsmysurroundings.client.Render.BlockRender;
 
@@ -25,6 +26,9 @@ public class WhatsMySurroundingsClient implements ClientModInitializer {
 
         // 5. 注册方块高亮
         BlockRender.register(); 
+
+        // 6. 注册自动查询
+        AutoQueryManager.register();
 
         System.out.println("[WMS] 客户端初始化完成，已注册事件监听器");
     }

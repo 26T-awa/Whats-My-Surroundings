@@ -21,5 +21,6 @@ public class WMSCommands {
       //TestCommand.register();
       wmsblockCommand.register();
       wmshelpCommand.register();
+      //wmsentityCommand.register();
    }
 }

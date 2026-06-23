@@ -62,7 +62,7 @@ public class wmshelpCommand {
         int count = 1;
         context.getSource()
                 .sendFeedback(Component.literal(
-                        "\u00a7a[WMS] 现有的所有命令："));
+                        "§a[WMS] 现有的所有命令："));
 
         for (String command : WMSCommands.getWMSCommands()) {
             context.getSource()
@@ -84,12 +84,12 @@ public class wmshelpCommand {
 
                 context.getSource()
                         .sendFeedback(Component.literal("" +
-                                "/wmsblock find\u00a77-查询所有非空气方块\u00a7r\n" +
-                                "/wmsblock find *\u00a77-查询仅目标方块\u00a7r\n" +
-                                "/wmsblock set <radius>\u00a77-设置方形半径\u00a7r\n" +
-                                "/wmsblock target add <block_id>\u00a77-加入新的目标方块\u00a7r\n" +
-                                "/wmsblock target list\u00a77-显示已有的目标方块\u00a7r\n" +
-                                "/wmsblock target remove <block_id>\u00a77-删除目标方块\u00a7r\n"));
+                                "/wmsblock find§7-查询所有非空气方块§r\n" +
+                                "/wmsblock find *§7-查询仅目标方块§r\n" +
+                                "/wmsblock set <radius>§7-设置方形半径§r\n" +
+                                "/wmsblock target add <block_id>§7-加入新的目标方块§r\n" +
+                                "/wmsblock target list§7-显示已有的目标方块§r\n" +
+                                "/wmsblock target remove <block_id>§7-删除目标方块§r\n"));
                 break;
             }
 
@@ -100,8 +100,8 @@ public class wmshelpCommand {
 
                 context.getSource()
                         .sendFeedback(Component.literal("" +
-                                "/wmshelp\u00a77-列出已有的全部命令\u00a7r\n" +
-                                "/wmshelp <command>\u00a77-获得指定命令的用法\u00a7r\n"));
+                                "/wmshelp§7-列出已有的全部命令§r\n" +
+                                "/wmshelp <command>§7-获得指定命令的用法§r\n"));
                 break;
             }
 

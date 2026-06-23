@@ -47,24 +47,24 @@ public class BlockRender {
                     .withDepthStencilState(Optional.empty())
                     .build());
 
-    private static List<WaypointRenderState> waypointState = new ArrayList<>();
+    private static List<WaypointRenderState> CommonwaypointState = new ArrayList<>();
 
     public static void addHighlight(BlockPos pos, float r, float g, float b, float a) {
-        waypointState.add(new WaypointRenderState(
+        CommonwaypointState.add(new WaypointRenderState(
                 pos.getX(), pos.getY(), pos.getZ(),
                 r, g, b, a));
     }
 
     public static void addHighlight(BlockPos pos) {
-        addHighlight(pos, 1.0f, 0.0f, 0.0f, 0.8f);
+        addHighlight(pos, 0.2f, 0.8f, 0.9f, 0.3f);
     }
 
     public static void clearHighlights() {
-        waypointState.clear();
+        CommonwaypointState.clear();
     }
 
-    public static List<WaypointRenderState> getHighlights() {
-        return new ArrayList<>(waypointState);
+    public static List<WaypointRenderState> getCommonHighlights() {
+        return new ArrayList<>(CommonwaypointState);
     }
 
     // Render states should be immutable, thread safe, and fast to create.
@@ -99,7 +99,7 @@ public class BlockRender {
     }
 
     private void renderAndDrawAllWaypoints(LevelRenderContext context) {
-        if (waypointState.isEmpty()) {
+        if (CommonwaypointState.isEmpty()) {
             // 如果高亮列表为空，建议清理缓冲区
             if (this.buffer != null) {
                 this.buffer = null;
@@ -120,7 +120,7 @@ public class BlockRender {
         }
 
         // 为所有高亮方块添加顶点数据
-        for (WaypointRenderState state : waypointState) {
+        for (WaypointRenderState state : CommonwaypointState) {
             this.renderFilledBox(matrices.last().pose(), this.buffer,
                     state.x(), state.y(), state.z(),
                     state.x() + 1, state.y() + 1, state.z() + 1,
