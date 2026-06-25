@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.joml.Matrix4f;
 import org.joml.Matrix4fc;
@@ -24,21 +25,25 @@ import com.mojang.blaze3d.vertex.MeshData;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexFormat;
 
-import net.fabricmc.fabric.api.client.rendering.v1.level.LevelExtractionContext;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
-
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MappableRingBuffer;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.Identifier;
-import net.minecraft.world.level.levelgen.WorldgenRandom;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import whatsmysurroundings.WhatsMySurroundings;
-import whatsmysurroundings.client.WhatsMySurroundingsClient;
+import whatsmysurroundings.client.Render.HighlightMode;
+import whatsmysurroundings.client.Render.HighlightRequest;
+import whatsmysurroundings.client.Render.HighlightType;
 
+/**
+ * 统一高亮渲染引擎
+ * 支持任意类型（方块/实体/未来扩展），每种类型独立管理手动/自动模式
+ */
 public class BlockRender {
     private static final RenderPipeline FILLED_THROUGH_WALLS = RenderPipelines
             .register(RenderPipeline.builder(RenderPipelines.DEBUG_FILLED_SNIPPET)
@@ -47,30 +52,10 @@ public class BlockRender {
                     .withDepthStencilState(Optional.empty())
                     .build());
 
-    private static List<WaypointRenderState> CommonwaypointState = new ArrayList<>();
+    // ========== 统一数据存储 ==========
+    private static final List<HighlightRequest> highlights = new CopyOnWriteArrayList<>();
 
-    public static void addHighlight(BlockPos pos, float r, float g, float b, float a) {
-        CommonwaypointState.add(new WaypointRenderState(
-                pos.getX(), pos.getY(), pos.getZ(),
-                r, g, b, a));
-    }
-
-    public static void addHighlight(BlockPos pos) {
-        addHighlight(pos, 0.2f, 0.8f, 0.9f, 0.3f);
-    }
-
-    public static void clearHighlights() {
-        CommonwaypointState.clear();
-    }
-
-    public static List<WaypointRenderState> getCommonHighlights() {
-        return new ArrayList<>(CommonwaypointState);
-    }
-
-    // Render states should be immutable, thread safe, and fast to create.
-    private record WaypointRenderState(int x, int y, int z, float r, float g, float b, float a) {
-    }
-
+    // ========== 渲染资源 ==========
     private static final ByteBufferBuilder ALLOCATOR = new ByteBufferBuilder(RenderType.SMALL_BUFFER_SIZE);
     private static final Vector4f COLOR_MODULATOR = new Vector4f(1f, 1f, 1f, 1f);
     private static final Vector3f MODEL_OFFSET = new Vector3f();
@@ -78,29 +63,102 @@ public class BlockRender {
     private BufferBuilder buffer;
     private MappableRingBuffer vertexBuffer;
 
-
     private static BlockRender instance;
 
+    // ========== 公共 API ==========
+
     /**
-     * 在客户端初始化时调用此方法注册渲染事件
+     * 在客户端初始化时注册渲染事件
      */
     public static void register() {
         if (instance == null) {
             instance = new BlockRender();
         }
-        // 注册提取事件（用于准备数据）
-
-        // 注册提取事件（用于准备数据）
-        LevelRenderEvents.END_EXTRACTION.register(context -> {
-        });
-        // 注册渲染事件（用于绘制高亮）
-        LevelRenderEvents.AFTER_TRANSLUCENT_TERRAIN.register(instance::renderAndDrawAllWaypoints);
+        LevelRenderEvents.AFTER_TRANSLUCENT_TERRAIN.register(instance::renderAllHighlights);
         System.out.println("[WMS] BlockRender 已注册渲染事件");
     }
 
-    private void renderAndDrawAllWaypoints(LevelRenderContext context) {
-        if (CommonwaypointState.isEmpty()) {
-            // 如果高亮列表为空，建议清理缓冲区
+    /**
+     * 添加高亮（方块位置）
+     */
+    public static void addHighlight(HighlightType type, HighlightMode mode, BlockPos pos,
+                                    float r, float g, float b, float a, int durationTicks) {
+        synchronized (highlights) {
+            highlights.add(new HighlightRequest(type, mode, pos, r, g, b, a, durationTicks));
+        }
+    }
+
+    /**
+     * 添加高亮（自定义碰撞箱，用于实体等）
+     */
+    public static void addHighlight(HighlightType type, HighlightMode mode, AABB box,
+                                    float r, float g, float b, float a, int durationTicks) {
+        synchronized (highlights) {
+            highlights.add(new HighlightRequest(type, mode, box, r, g, b, a, durationTicks));
+        }
+    }
+
+    /**
+     * 清除指定类型和模式的所有高亮
+     */
+    public static void clearHighlights(HighlightType type, HighlightMode mode) {
+        synchronized (highlights) {
+            highlights.removeIf(req -> req.type == type && req.mode == mode);
+        }
+    }
+
+    /**
+     * 清除指定类型的所有高亮（同时清除手动和自动）
+     */
+    public static void clearHighlights(HighlightType type) {
+        synchronized (highlights) {
+            highlights.removeIf(req -> req.type == type);
+        }
+    }
+
+    /**
+     * 清除所有高亮
+     */
+    public static void clearAll() {
+        synchronized (highlights) {
+            highlights.clear();
+        }
+    }
+
+    /**
+     * 清除指定位置的高亮（不限类型和模式）
+     */
+    public static void removeAt(BlockPos pos) {
+        synchronized (highlights) {
+            highlights.removeIf(req -> {
+                AABB box = req.boundingBox;
+                return box.minX == pos.getX() && box.minY == pos.getY() && box.minZ == pos.getZ()
+                        && box.maxX == pos.getX() + 1 && box.maxY == pos.getY() + 1 && box.maxZ == pos.getZ() + 1;
+            });
+        }
+    }
+
+    /**
+     * 获取当前高亮总数（用于调试）
+     */
+    public static int getCount() {
+        synchronized (highlights) {
+            return highlights.size();
+        }
+    }
+
+    // ========== Tick 更新（清理过期高亮） ==========
+
+    public static void tick() {
+        synchronized (highlights) {
+            highlights.removeIf(req -> req.durationTicks >= 0 && (req.durationTicks--) <= 0);
+        }
+    }
+
+    // ========== 渲染核心 ==========
+
+    private void renderAllHighlights(LevelRenderContext context) {
+        if (highlights.isEmpty()) {
             if (this.buffer != null) {
                 this.buffer = null;
             }
@@ -119,47 +177,24 @@ public class BlockRender {
                     FILLED_THROUGH_WALLS.getVertexFormat());
         }
 
-        // 为所有高亮方块添加顶点数据
-        for (WaypointRenderState state : CommonwaypointState) {
-            this.renderFilledBox(matrices.last().pose(), this.buffer,
-                    state.x(), state.y(), state.z(),
-                    state.x() + 1, state.y() + 1, state.z() + 1,
-                    state.r(), state.g(), state.b(), state.a());
+        // 遍历所有高亮请求
+        for (HighlightRequest req : highlights) {
+            renderFilledBox(matrices.last().pose(), this.buffer,
+                    (float) req.boundingBox.minX, (float) req.boundingBox.minY, (float) req.boundingBox.minZ,
+                    (float) req.boundingBox.maxX, (float) req.boundingBox.maxY, (float) req.boundingBox.maxZ,
+                    req.r, req.g, req.b, req.a);
         }
 
         matrices.popPose();
-
-        // 绘制所有累积的顶点
-        this.drawFilledThroughWalls(Minecraft.getInstance(), FILLED_THROUGH_WALLS);
+        drawFilledThroughWalls(Minecraft.getInstance(), FILLED_THROUGH_WALLS);
     }
 
-    private void renderAndDrawWaypoint(LevelRenderContext context, WaypointRenderState waypointrenderstate) {
-        this.renderWaypoint(context, waypointrenderstate);
-        this.drawFilledThroughWalls(Minecraft.getInstance(), FILLED_THROUGH_WALLS);
-    }
+    // ========== 底层渲染方法（保持不变） ==========
 
-    private void renderWaypoint(LevelRenderContext context, WaypointRenderState waypointrenderstate) {
-        PoseStack matrices = context.poseStack();
-        Vec3 camera = context.levelState().cameraRenderState.pos;
-
-        matrices.pushPose();
-        matrices.translate(-camera.x, -camera.y, -camera.z);
-
-        if (this.buffer == null) {
-            this.buffer = new BufferBuilder(ALLOCATOR, FILLED_THROUGH_WALLS.getVertexFormatMode(),
-                    FILLED_THROUGH_WALLS.getVertexFormat());
-        }
-
-        this.renderFilledBox(matrices.last().pose(), this.buffer, waypointrenderstate.x(), waypointrenderstate.y(),
-                waypointrenderstate.z(), waypointrenderstate.x() + 1, waypointrenderstate.y() + 1,
-                waypointrenderstate.z() + 1,
-                waypointrenderstate.r(), waypointrenderstate.g(), waypointrenderstate.b(), waypointrenderstate.a());
-
-        matrices.popPose();
-    }
-
-    private void renderFilledBox(Matrix4fc positionMatrix, BufferBuilder buffer, float minX, float minY, float minZ,
-            float maxX, float maxY, float maxZ, float red, float green, float blue, float alpha) {
+    private void renderFilledBox(Matrix4fc positionMatrix, BufferBuilder buffer,
+                                  float minX, float minY, float minZ,
+                                  float maxX, float maxY, float maxZ,
+                                  float red, float green, float blue, float alpha) {
         // Front Face
         buffer.addVertex(positionMatrix, minX, minY, maxZ).setColor(red, green, blue, alpha);
         buffer.addVertex(positionMatrix, maxX, minY, maxZ).setColor(red, green, blue, alpha);
@@ -197,8 +232,7 @@ public class BlockRender {
         buffer.addVertex(positionMatrix, minX, minY, maxZ).setColor(red, green, blue, alpha);
     }
 
-    private void drawFilledThroughWalls(Minecraft client,
-            @SuppressWarnings("SameParameterValue") RenderPipeline pipeline) {
+    private void drawFilledThroughWalls(Minecraft client, RenderPipeline pipeline) {
         // Build the buffer
         MeshData builtBuffer = this.buffer.buildOrThrow();
         MeshData.DrawState drawParameters = builtBuffer.drawState();
@@ -240,7 +274,7 @@ public class BlockRender {
     }
 
     private static void draw(Minecraft client, RenderPipeline pipeline, MeshData builtBuffer,
-            MeshData.DrawState drawParameters, GpuBuffer vertices, VertexFormat format) {
+                              MeshData.DrawState drawParameters, GpuBuffer vertices, VertexFormat format) {
         GpuBuffer indices;
         VertexFormat.IndexType indexType;
 

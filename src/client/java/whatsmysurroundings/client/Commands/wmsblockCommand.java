@@ -4,6 +4,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import whatsmysurroundings.client.Render.BlockRender;
+import whatsmysurroundings.client.Render.HighlightMode;
+import whatsmysurroundings.client.Render.HighlightType;
 import whatsmysurroundings.client.Commands.BlockSuggestionProvider;
 import whatsmysurroundings.client.Commands.WMSCommands;
 import whatsmysurroundings.client.Others.AutoQueryManager;
@@ -39,11 +41,9 @@ import net.minecraft.network.chat.Component;
 
 public class wmsblockCommand {
     private static int radius = 5;// 方形半径
-
     private static int blockTaskId = -1;
-    private static int internal = 20;// 默认自动查询间隔
+    private static int internal = 100;// 默认自动查询间隔
     private static boolean enableAutoQuery = false;
-
     private static List<Block> TargetBlocks = new ArrayList<>();
 
     // 半径建议
@@ -185,7 +185,7 @@ public class wmsblockCommand {
 
             // 注册新任务
             blockTaskId = AutoQueryManager.addTask(
-                    () -> findTargetBlocksOnly(context), // 查询逻辑
+                    () -> autofindTargetBlocksOnly(context), // 查询逻辑
                     internal);
 
             context.getSource().sendFeedback(
@@ -251,7 +251,8 @@ public class wmsblockCommand {
                         if (TargetBlocks.contains(block)) {
                             foundMap.computeIfAbsent(block, k -> new ArrayList<>()).add(pos);
 
-                            BlockRender.addHighlight(pos);
+                            BlockRender.addHighlight(HighlightType.BLOCK, HighlightMode.MANUAL, pos, 0.2f, 0.7f, 0.7f,
+                                    0.8f, -1);
                         }
                     }
                 }
@@ -267,6 +268,81 @@ public class wmsblockCommand {
         // 输出结果
         context.getSource().sendFeedback(
                 Component.literal(String.format("§a[WMS] 在半径 %d 内找到 %d 种目标方块:", radius, foundMap.size())));
+        int totaltargetblocks = 0;
+
+        for (Map.Entry<Block, List<BlockPos>> entry : foundMap.entrySet()) {
+            Block block = entry.getKey();
+            List<BlockPos> positions = entry.getValue();
+            String blockName = block.getName().getString();
+            String registryName = BuiltInRegistries.BLOCK.wrapAsHolder(block).getRegisteredName();
+
+            // 输出坐标列表（每行2个坐标）
+            StringBuilder text = new StringBuilder(
+                    String.format("  §f- %s §7(%s):\n    ", blockName, registryName));
+            for (int i = 0; i < positions.size(); i++) {
+                BlockPos pos = positions.get(i);
+                text.append(String.format("§7[§c%d§7, §a%d§7, §b%d§7]",
+                        pos.getX(), pos.getY(), pos.getZ()));
+                if (i < positions.size() - 1)
+                    text.append("§7,    ");
+                else
+                    text.append("§7.");
+
+                // 每2个坐标换行
+                if ((i + 1) % 2 == 0 && i < positions.size() - 1)
+                    text.append("\n    ");
+            }
+            totaltargetblocks += positions.size();
+
+            context.getSource().sendFeedback(Component.literal(text.toString()));
+        }
+
+        return totaltargetblocks;
+    }
+
+    // 查询仅目标方块
+    private static int autofindTargetBlocksOnly(CommandContext<FabricClientCommandSource> context) {
+        if (TargetBlocks.isEmpty()) {
+            context.getSource().sendFeedback(
+                    Component.literal("§e[WMS 自动] 请先使用 /wmsblock target add 添加目标方块"));
+            toggleAutoFind(context);
+            return 0;
+        }
+
+        LocalPlayer player = context.getSource().getPlayer();
+
+        Level world = player.level();
+        BlockPos centerPos = player.blockPosition();
+
+        Map<Block, List<BlockPos>> foundMap = new HashMap<>();
+
+        for (int dx = -radius; dx <= radius; dx++) {
+            for (int dy = -radius; dy <= radius; dy++) {
+                for (int dz = -radius; dz <= radius; dz++) {
+                    BlockPos pos = centerPos.offset(dx, dy, dz);
+                    BlockState state = world.getBlockState(pos);
+                    if (!state.isAir()) {
+                        Block block = state.getBlock();
+                        if (TargetBlocks.contains(block)) {
+                            foundMap.computeIfAbsent(block, k -> new ArrayList<>()).add(pos);
+
+                            BlockRender.addHighlight(HighlightType.BLOCK, HighlightMode.AUTO, pos, 0.7f, 0.3f, 0.1f,
+                                    0.8f, internal);
+                        }
+                    }
+                }
+            }
+        }
+
+        if (foundMap.isEmpty()) {
+            context.getSource().sendFeedback(
+                    Component.literal("§e[WMS 自动] 在半径 " + radius + " 内未找到任何目标方块"));
+            return 0;
+        }
+
+        // 输出结果
+        context.getSource().sendFeedback(
+                Component.literal(String.format("§a[WMS 自动] 在半径 %d 内找到 %d 种目标方块:", radius, foundMap.size())));
         int totaltargetblocks = 0;
 
         for (Map.Entry<Block, List<BlockPos>> entry : foundMap.entrySet()) {
@@ -320,7 +396,8 @@ public class wmsblockCommand {
                         if (TargetBlocks.contains(state.getBlock())) {
                             targetCount++;
 
-                            BlockRender.addHighlight(pos);
+                            BlockRender.addHighlight(HighlightType.BLOCK, HighlightMode.MANUAL, pos, 0.2f, 0.7f, 0.7f,
+                                    0.8f, -1);
                         }
                     }
                 }
@@ -512,9 +589,10 @@ public class wmsblockCommand {
     private static int clearBlockHighlight(CommandContext<FabricClientCommandSource> context) {
         context.getSource()
                 .sendFeedback(Component.literal(String.format(
-                        "§a[WMS] 已清除所有高亮")));
+                        "§a[WMS] 已清除所有方块高亮")));
 
-        BlockRender.clearHighlights();
+        BlockRender.clearHighlights(HighlightType.BLOCK, HighlightMode.MANUAL);
+        BlockRender.clearHighlights(HighlightType.BLOCK, HighlightMode.AUTO);
         return 1;
     }
 

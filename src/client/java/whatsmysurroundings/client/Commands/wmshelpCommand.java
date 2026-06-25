@@ -79,11 +79,9 @@ public class wmshelpCommand {
 
             case "wmsblock": {
                 context.getSource()
-                        .sendFeedback(Component.literal(
-                                "/wmsblock用法如下:"));
-
-                context.getSource()
-                        .sendFeedback(Component.literal("" +
+                        .sendFeedback(Component.literal("/wmsblock用法如下:\n" +
+                                "/wmsblock auto§7-切换自动查询§r\n" +
+                                "/wmsblock auto <internal>§7-设置查询间隔并开启自动查询§r\n" +
                                 "/wmsblock find§7-查询所有非空气方块§r\n" +
                                 "/wmsblock find *§7-查询仅目标方块§r\n" +
                                 "/wmsblock set <radius>§7-设置方形半径§r\n" +
@@ -93,13 +91,23 @@ public class wmshelpCommand {
                 break;
             }
 
+            case "wmsentity": {
+                context.getSource()
+                        .sendFeedback(Component.literal("/wmsentity用法如下:\n" +
+                                "/wmsentity auto§7-切换自动查询§r\n" +
+                                "/wmsentity auto <internal>§7-设置查询间隔并开启自动查询§r\n" +
+                                "/wmsentity find§7-查询所有非空气方块§r\n" +
+                                "/wmsentity find *§7-查询仅目标实体§r\n" +
+                                "/wmsentity set <radius>§7-设置方形半径§r\n" +
+                                "/wmsentity target add <block_id>§7-加入新的目标实体§r\n" +
+                                "/wmsentity target list§7-显示已有的目标实体§r\n" +
+                                "/wmsentity target remove <entity_id>§7-删除目标实体§r\n"));
+                break;
+            }
+
             case "wmshelp": {
                 context.getSource()
-                        .sendFeedback(Component.literal(
-                                "/wmshelp用法如下:"));
-
-                context.getSource()
-                        .sendFeedback(Component.literal("" +
+                        .sendFeedback(Component.literal("/wmshelp用法如下:\n" +
                                 "/wmshelp§7-列出已有的全部命令§r\n" +
                                 "/wmshelp <command>§7-获得指定命令的用法§r\n"));
                 break;

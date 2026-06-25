@@ -1,6 +1,7 @@
 package whatsmysurroundings.client.Others;
 
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 
@@ -8,7 +9,7 @@ import java.util.ArrayList;
 
 public class AutoQueryManager {
     // 1. 任务列表
-    private static final List<ScheduledTask> tasks = new ArrayList<>();
+    private static final List<ScheduledTask> tasks = new CopyOnWriteArrayList<>();
     private static int nextTaskId = 0;
 
     // 2. 注册任务（外部调用）
