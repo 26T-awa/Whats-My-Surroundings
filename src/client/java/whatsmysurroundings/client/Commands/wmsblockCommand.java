@@ -3,7 +3,7 @@ package whatsmysurroundings.client.Commands;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
-import whatsmysurroundings.client.Render.BlockRender;
+import whatsmysurroundings.client.Render.HlightRender;
 import whatsmysurroundings.client.Render.HighlightMode;
 import whatsmysurroundings.client.Render.HighlightType;
 import whatsmysurroundings.client.Commands.BlockSuggestionProvider;
@@ -73,20 +73,14 @@ public class wmsblockCommand {
             dispatcher.register(
                     ClientCommands.literal("wmsblock")
                             // '/wmsblock' 直接输入无结果，返回值为1
-                            .executes(context -> {
-                                return nullCommand(context);
-                            })
+                            .executes(context -> nullCommand(context))
 
                             // '/wmsblock set <radius>' 设置查询方形半径
                             .then(ClientCommands.literal("set")
                                     .then(ClientCommands.argument("radius", IntegerArgumentType.integer())
                                             .suggests(RADIUS_SUGGESTIONS)
-                                            .executes(context -> {
-                                                return setRadius(context,
-                                                        IntegerArgumentType.getInteger(context, "radius"));
-                                            }))
-
-                            )
+                                            .executes(context -> setRadius(context,
+                                                    IntegerArgumentType.getInteger(context, "radius")))))
 
                             // '/wmsblock target ...'
                             .then(ClientCommands.literal("target")
@@ -116,23 +110,15 @@ public class wmsblockCommand {
 
                                     // '/wmsblock target list' 列出已有的目标方块
                                     .then(ClientCommands.literal("list")
-                                            .executes(context -> {
-                                                return showTargetBlocks(context);
-                                            }))
-
-                            )
+                                            .executes(context -> showTargetBlocks(context))))
 
                             // '/wmsblock find' 查询仅目标方块
                             .then(ClientCommands.literal("find")
-                                    .executes(context -> {
-                                        return findTargetBlocksOnly(context);
-                                    })
+                                    .executes(context -> findTargetBlocksOnly(context))
 
                                     // '/wmsblock find *' 查询所有非空气方块
                                     .then(ClientCommands.literal("*")
-                                            .executes(context -> {
-                                                return findAllBlocks(context);
-                                            }))
+                                            .executes(context -> findAllBlocks(context)))
 
                                     // '/wmsblock find [<block_id>]' 加入并查询目标方块
                                     .then(ClientCommands.argument("block_id", BlockStateArgument.block(registryAccess))
@@ -143,17 +129,13 @@ public class wmsblockCommand {
                                                 Block newblock = blockInput.getState().getBlock();
 
                                                 return findandAddTargetBlocksOnly(context, newblock);
-                                            }))
-
-                            )
+                                            })))
 
                             // '/wmsblock clear' 清除显示
                             .then(ClientCommands.literal("clear")
                                     .executes(context -> {
                                         return clearBlockHighlight(context);
-                                    })
-
-                            )
+                                    }))
 
                             // '/wmsblock auto' 切换自动查询
                             .then(ClientCommands.literal("auto")
@@ -163,18 +145,16 @@ public class wmsblockCommand {
 
                                     // '/wmsblock auto [<internal>]' 设置查询间隔并开启自动查询
                                     .then(ClientCommands.argument("internal", IntegerArgumentType.integer())
-                                            .executes(context -> {
-                                                return setInternal(context,
-                                                        IntegerArgumentType.getInteger(context, "internal"));
-                                            }))
-
-                            )
-
-            );
+                                            .executes(context -> setInternal(context,
+                                                    IntegerArgumentType.getInteger(context, "internal"))))));
         });
     }
 
-    // 加入或删除任务
+    /**
+     * 加入或删除任务（根据状态判断）
+     * 
+     * @param context 命令上下文
+     */
     private static void CheckState(CommandContext<FabricClientCommandSource> context) {
         if (enableAutoQuery) {
             // 如果已有任务，先移除再注册
@@ -200,14 +180,25 @@ public class wmsblockCommand {
         }
     }
 
-    // 切换自动查询
+    /**
+     * 切换自动查询
+     * 
+     * @param context 命令上下文
+     * @return 1
+     */
     private static int toggleAutoFind(CommandContext<FabricClientCommandSource> context) {
         enableAutoQuery = !enableAutoQuery;
         CheckState(context);
         return 1;
     }
 
-    // 加入并查询目标方块
+    /**
+     * 加入并查询目标方块（临时添加后查询，再移除）
+     * 
+     * @param context   命令上下文
+     * @param new_block 临时加入的目标方块
+     * @return 查询到的目标方块总数
+     */
     private static int findandAddTargetBlocksOnly(CommandContext<FabricClientCommandSource> context, Block new_block) {
         boolean has_found = false;
         for (Block target : TargetBlocks)
@@ -226,7 +217,12 @@ public class wmsblockCommand {
         return totaltargetblocks;
     }
 
-    // 查询仅目标方块
+    /**
+     * 查询仅目标方块
+     * 
+     * @param context 命令上下文
+     * @return 查询到的目标方块总数
+     */
     private static int findTargetBlocksOnly(CommandContext<FabricClientCommandSource> context) {
         if (TargetBlocks.isEmpty()) {
             context.getSource().sendFeedback(
@@ -251,7 +247,7 @@ public class wmsblockCommand {
                         if (TargetBlocks.contains(block)) {
                             foundMap.computeIfAbsent(block, k -> new ArrayList<>()).add(pos);
 
-                            BlockRender.addHighlight(HighlightType.BLOCK, HighlightMode.MANUAL, pos, 0.2f, 0.7f, 0.7f,
+                            HlightRender.addHighlight(HighlightType.BLOCK, HighlightMode.MANUAL, pos, 0.2f, 0.7f, 0.7f,
                                     0.8f, -1);
                         }
                     }
@@ -300,7 +296,12 @@ public class wmsblockCommand {
         return totaltargetblocks;
     }
 
-    // 查询仅目标方块
+    /**
+     * 自动查询仅目标方块
+     * 
+     * @param context 命令上下文
+     * @return 查询到的目标方块总数
+     */
     private static int autofindTargetBlocksOnly(CommandContext<FabricClientCommandSource> context) {
         if (TargetBlocks.isEmpty()) {
             context.getSource().sendFeedback(
@@ -326,7 +327,7 @@ public class wmsblockCommand {
                         if (TargetBlocks.contains(block)) {
                             foundMap.computeIfAbsent(block, k -> new ArrayList<>()).add(pos);
 
-                            BlockRender.addHighlight(HighlightType.BLOCK, HighlightMode.AUTO, pos, 0.7f, 0.3f, 0.1f,
+                            HlightRender.addHighlight(HighlightType.BLOCK, HighlightMode.AUTO, pos, 0.7f, 0.3f, 0.1f,
                                     0.8f, internal);
                         }
                     }
@@ -375,7 +376,12 @@ public class wmsblockCommand {
         return totaltargetblocks;
     }
 
-    // 查询所有非空气方块
+    /**
+     * 查询所有非空气方块
+     * 
+     * @param context 命令上下文
+     * @return 非空气方块总数
+     */
     private static int findAllBlocks(CommandContext<FabricClientCommandSource> context) {
         LocalPlayer player = context.getSource().getPlayer();
 
@@ -396,7 +402,7 @@ public class wmsblockCommand {
                         if (TargetBlocks.contains(state.getBlock())) {
                             targetCount++;
 
-                            BlockRender.addHighlight(HighlightType.BLOCK, HighlightMode.MANUAL, pos, 0.2f, 0.7f, 0.7f,
+                            HlightRender.addHighlight(HighlightType.BLOCK, HighlightMode.MANUAL, pos, 0.2f, 0.7f, 0.7f,
                                     0.8f, -1);
                         }
                     }
@@ -467,7 +473,13 @@ public class wmsblockCommand {
         return totalBlocks;
     }
 
-    // 加入新的目标方块
+    /**
+     * 添加目标方块
+     * 
+     * @param context   命令上下文
+     * @param new_block 新增的目标方块
+     * @return 1成功；0失败
+     */
     private static int addTargetBlock(CommandContext<FabricClientCommandSource> context, Block new_block) {
         for (Block target : TargetBlocks) {
             if (BuiltInRegistries.BLOCK.wrapAsHolder(target).getRegisteredName().equals(
@@ -486,7 +498,12 @@ public class wmsblockCommand {
         return 1;
     }
 
-    // 显示已有的目标方块
+    /**
+     * 列出已有的目标方块
+     * 
+     * @param context 命令上下文
+     * @return 目标方块数量
+     */
     private static int showTargetBlocks(CommandContext<FabricClientCommandSource> context) {
         int size = TargetBlocks.size();
         context.getSource()
@@ -512,7 +529,13 @@ public class wmsblockCommand {
         return size;
     }
 
-    // 删除目标方块
+    /**
+     * 删除目标方块
+     * 
+     * @param context     命令上下文
+     * @param tormv_block 待删除的目标方块
+     * @return 1成功；0失败
+     */
     private static int removeTargetBlock(CommandContext<FabricClientCommandSource> context, Block tormv_block) {
         /*
          * boolean has_found = false;
@@ -531,7 +554,13 @@ public class wmsblockCommand {
             return 0;
     }
 
-    // 设置方形半径
+    /**
+     * 设置方形半径
+     * 
+     * @param context    命令上下文
+     * @param new_radius 新方形半径
+     * @return 设置后的半径
+     */
     private static int setRadius(CommandContext<FabricClientCommandSource> context, int new_radius) {
         if (new_radius < 0) {
             context.getSource()
@@ -560,7 +589,13 @@ public class wmsblockCommand {
         return radius;
     }
 
-    // 设置间隔
+    /**
+     * 设置间隔
+     * 
+     * @param context      命令上下文
+     * @param new_internal 新间隔
+     * @return 设置后的间隔
+     */
     private static int setInternal(CommandContext<FabricClientCommandSource> context, int new_internal) {
         if (new_internal < 0) {
             context.getSource()
@@ -585,22 +620,29 @@ public class wmsblockCommand {
         return internal;
     }
 
-    // 清除方块高亮
+    /**
+     * 清除方块高亮
+     * 
+     * @param context 命令上下文
+     * @return 1
+     */
     private static int clearBlockHighlight(CommandContext<FabricClientCommandSource> context) {
         context.getSource()
                 .sendFeedback(Component.literal(String.format(
                         "§a[WMS] 已清除所有方块高亮")));
 
-        BlockRender.clearHighlights(HighlightType.BLOCK, HighlightMode.MANUAL);
-        BlockRender.clearHighlights(HighlightType.BLOCK, HighlightMode.AUTO);
+        HlightRender.clearHighlights(HighlightType.BLOCK, HighlightMode.MANUAL);
+        HlightRender.clearHighlights(HighlightType.BLOCK, HighlightMode.AUTO);
         return 1;
     }
 
-    // 空指令
+    /**
+     * 空指令
+     * 
+     * @param context 命令上下文
+     * @return 1
+     */
     private static int nullCommand(CommandContext<FabricClientCommandSource> context) {
-        context.getSource().sendFeedback(
-                Component.literal("§7[WMS Debug] Called '/wmstest' with no arguments."));
         return 1;
     }
-
 }

@@ -1,5 +1,8 @@
 # Whats My Surroundings模组
 
+> 此模组的注释大部分为汉语，便于学习
+> English for LEARNING is coming soon...
+
 ## 安装
 
 此模组需要**Fabric**模组加载器，适用**MC Java 26.1.2**

@@ -85,3 +85,17 @@ publishing {
 		// retrieving dependencies.
 	}
 }
+
+// 自定义任务：复制模组文件到客户端 mods 文件夹
+tasks.register('copyMod', Copy) {
+    // 指定要复制的文件：从构建目录中查找以 .jar 结尾且不包含 "-sources" 的文件
+	from "${project.buildDir}/libs/${project.name}-${project.version}.jar"    // 指定目标文件夹（请修改为你的 .minecraft 实际路径）
+    into 'C:/Users/suzhi/Desktop/game/.minecraft/versions/26.1.2-Fabric 0.19.2/mods' //C:\Users\suzhi\Desktop\game\.minecraft\versions\26.1.2-Fabric 0.19.2\mods
+    // 可选：重命名文件，例如保留最新版本
+    rename { String fileName -> "whatsmysurroundings-latest.jar" }
+}
+
+// 将自定义任务挂载到 build 任务之后，这样执行 build 时会自动执行
+tasks.named('build') {
+    finalizedBy 'copyMod'
+}

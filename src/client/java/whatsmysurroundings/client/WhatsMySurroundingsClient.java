@@ -7,7 +7,7 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import whatsmysurroundings.client.Commands.WMSCommands;
 import whatsmysurroundings.client.Others.AutoQueryManager;
 import whatsmysurroundings.client.Others.KeyBindings;
-import whatsmysurroundings.client.Render.BlockRender;
+import whatsmysurroundings.client.Render.HlightRender;
 
 @Environment(EnvType.CLIENT)
 public class WhatsMySurroundingsClient implements ClientModInitializer {
@@ -26,11 +26,11 @@ public class WhatsMySurroundingsClient implements ClientModInitializer {
         WMSCommands.init();
 
         // 5. 注册方块高亮
-        BlockRender.register(); 
+        HlightRender.register(); 
 
         // 注册 Tick 事件，用于清理过期高亮
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
-            BlockRender.tick();
+            HlightRender.tick();
         });
 
         // 6. 注册自动查询

@@ -44,7 +44,7 @@ import whatsmysurroundings.client.Render.HighlightType;
  * 统一高亮渲染引擎
  * 支持任意类型（方块/实体/未来扩展），每种类型独立管理手动/自动模式
  */
-public class BlockRender {
+public class HlightRender {
     private static final RenderPipeline FILLED_THROUGH_WALLS = RenderPipelines
             .register(RenderPipeline.builder(RenderPipelines.DEBUG_FILLED_SNIPPET)
                     .withLocation(Identifier.fromNamespaceAndPath(WhatsMySurroundings.MOD_ID,
@@ -63,7 +63,7 @@ public class BlockRender {
     private BufferBuilder buffer;
     private MappableRingBuffer vertexBuffer;
 
-    private static BlockRender instance;
+    private static HlightRender instance;
 
     // ========== 公共 API ==========
 
@@ -72,7 +72,7 @@ public class BlockRender {
      */
     public static void register() {
         if (instance == null) {
-            instance = new BlockRender();
+            instance = new HlightRender();
         }
         LevelRenderEvents.AFTER_TRANSLUCENT_TERRAIN.register(instance::renderAllHighlights);
         System.out.println("[WMS] BlockRender 已注册渲染事件");
